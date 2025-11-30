@@ -202,16 +202,63 @@ namespace CrossInput
 
             ei_device *ptr = ctx->getPointer();
 
-            if (!ei_device_has_capability(ptr, EI_DEVICE_CAP_POINTER))
+            // Try relative movement first
+            if (ei_device_has_capability(ptr, EI_DEVICE_CAP_POINTER))
+            {
+                ei_device_start_emulating(ptr, 0);
+                ei_device_pointer_motion(ptr,
+                                         static_cast<double>(dx),
+                                         static_cast<double>(dy));
+                ei_device_frame(ptr, ei_now(ctx->get()));
+                ei_device_stop_emulating(ptr);
+                ctx->dispatch();
                 return;
+            }
 
-            ei_device_start_emulating(ptr, 0);
-            ei_device_pointer_motion(ptr,
-                                     static_cast<double>(dx),
-                                     static_cast<double>(dy));
-            ei_device_frame(ptr, ei_now(ctx->get()));
-            ei_device_stop_emulating(ptr);
-            ctx->dispatch();
+            // Fall back to absolute positioning if only that's available
+            if (ei_device_has_capability(ptr, EI_DEVICE_CAP_POINTER_ABSOLUTE))
+            {
+                struct ei_region *region = ei_device_get_region(ptr, 0);
+                if (!region)
+                    return;
+
+                // We need to track position ourselves for relative movement
+                static double current_x = -1, current_y = -1;
+
+                // Initialize to center of region if not set
+                if (current_x < 0)
+                {
+                    uint32_t rw = ei_region_get_width(region);
+                    uint32_t rh = ei_region_get_height(region);
+                    current_x = rw / 2.0;
+                    current_y = rh / 2.0;
+                }
+
+                // Calculate new position
+                current_x += dx;
+                current_y += dy;
+
+                // Clamp to region bounds
+                uint32_t rx = ei_region_get_x(region);
+                uint32_t ry = ei_region_get_y(region);
+                uint32_t rw = ei_region_get_width(region);
+                uint32_t rh = ei_region_get_height(region);
+
+                if (current_x < rx)
+                    current_x = rx;
+                if (current_y < ry)
+                    current_y = ry;
+                if (current_x >= rx + rw)
+                    current_x = rx + rw - 1;
+                if (current_y >= ry + rh)
+                    current_y = ry + rh - 1;
+
+                ei_device_start_emulating(ptr, 0);
+                ei_device_pointer_motion_absolute(ptr, current_x, current_y);
+                ei_device_frame(ptr, ei_now(ctx->get()));
+                ei_device_stop_emulating(ptr);
+                ctx->dispatch();
+            }
         }
 
     } // namespace WaylandImpl
