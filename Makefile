@@ -36,16 +36,33 @@ endif
 
 # Directories
 SRC_DIR = src
+PLATFORM_DIR = $(SRC_DIR)/platform
 TEST_DIR = test
 BUILD_DIR = build
 INCLUDE_DIR = include
 
+# Platform-specific source files
+ifeq ($(PLATFORM),linux)
+    PLATFORM_SOURCES = $(PLATFORM_DIR)/linux/x11_input.cpp \
+                       $(PLATFORM_DIR)/linux/wayland_input.cpp \
+                       $(PLATFORM_DIR)/linux/linux_input.cpp
+    PLATFORM_OBJECTS = $(BUILD_DIR)/x11_input.o \
+                       $(BUILD_DIR)/wayland_input.o \
+                       $(BUILD_DIR)/linux_input.o
+else ifeq ($(PLATFORM),windows)
+    PLATFORM_SOURCES = $(PLATFORM_DIR)/windows/windows_input.cpp
+    PLATFORM_OBJECTS = $(BUILD_DIR)/windows_input.o
+else
+    PLATFORM_SOURCES = $(PLATFORM_DIR)/stub/stub_input.cpp
+    PLATFORM_OBJECTS = $(BUILD_DIR)/stub_input.o
+endif
+
 # Source files
-LIB_SOURCES = $(SRC_DIR)/CrossInput.cpp
+LIB_SOURCES = $(PLATFORM_SOURCES)
 TEST_SOURCES = $(TEST_DIR)/test_crossinput.cpp
 
 # Object files
-LIB_OBJECTS = $(BUILD_DIR)/CrossInput.o
+LIB_OBJECTS = $(PLATFORM_OBJECTS)
 TEST_OBJECTS = $(BUILD_DIR)/test_crossinput.o
 
 # Targets
@@ -69,7 +86,22 @@ $(BUILD_DIR):
 $(LIB_TARGET): $(LIB_OBJECTS) | $(BUILD_DIR)
 	ar rcs $@ $^
 
-$(BUILD_DIR)/CrossInput.o: $(SRC_DIR)/CrossInput.cpp | $(BUILD_DIR)
+# Linux platform object files
+$(BUILD_DIR)/x11_input.o: $(PLATFORM_DIR)/linux/x11_input.cpp | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/wayland_input.o: $(PLATFORM_DIR)/linux/wayland_input.cpp | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/linux_input.o: $(PLATFORM_DIR)/linux/linux_input.cpp | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Windows platform object files
+$(BUILD_DIR)/windows_input.o: $(PLATFORM_DIR)/windows/windows_input.cpp | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Stub platform object files
+$(BUILD_DIR)/stub_input.o: $(PLATFORM_DIR)/stub/stub_input.cpp | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(TEST_TARGET): $(TEST_OBJECTS) $(LIB_TARGET) | $(BUILD_DIR)
