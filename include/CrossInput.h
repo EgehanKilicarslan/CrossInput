@@ -114,6 +114,8 @@ namespace CrossInput
     void KeyUp(KeyCode key);
     // Simulates a full press-release cycle
     void KeyPress(KeyCode key);
+    // Simulates a combination of keys (e.g., Ctrl+C)
+    void KeyCombination(const std::initializer_list<KeyCode> &keys);
 
     // ----------------------------------------------------
     // MOUSE ACTIONS

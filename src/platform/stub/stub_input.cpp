@@ -12,6 +12,7 @@ namespace CrossInput
     void KeyDown(KeyCode) {}
     void KeyUp(KeyCode) {}
     void KeyPress(KeyCode) {}
+    void KeyCombination(const std::initializer_list<KeyCode> &) {}
     void MouseButtonDown(MouseButton) {}
     void MouseButtonUp(MouseButton) {}
     void MouseClick(MouseButton) {}

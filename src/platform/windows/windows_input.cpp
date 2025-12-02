@@ -50,6 +50,21 @@ namespace CrossInput
         KeyUp(key);
     }
 
+    void KeyCombination(const std::initializer_list<KeyCode> &keys)
+    {
+        // Press all keys down in order
+        for (const auto &key : keys)
+        {
+            KeyDown(key);
+        }
+
+        // Release all keys in reverse order
+        for (auto it = std::rbegin(keys); it != std::rend(keys); ++it)
+        {
+            KeyUp(*it);
+        }
+    }
+
     void MouseButtonDown(MouseButton button)
     {
         INPUT input = {};
